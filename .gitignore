@@ -1,0 +1,26 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Byte-compiled / optimized / DLL files
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+.env/
+
+
+# pytest
+.pytest_cache/
+
+# lock files
+uv.lock
+
+# OS
+.DS_Store
+Thumbs.db
