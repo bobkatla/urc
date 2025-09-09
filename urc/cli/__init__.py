@@ -1,6 +1,6 @@
 import click
 from urc import __version__
-from urc.cli.quick_sanity_run import sanity_run
+from urc.cli.quick_sanity_run import sanity
 
 @click.group()
 @click.version_option(version=__version__, prog_name="urc")
@@ -16,4 +16,4 @@ def info():
     click.echo("Unified Region Calibration framework.")
 
 
-main.add_command(sanity_run, name="sanity-run")
+main.add_command(sanity, name="sanity")
