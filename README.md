@@ -1,31 +1,24 @@
 # URC — Unified Region Calibration (v0.1.0)
 
-**Goal (v1):** Region-aware *training-time* loss for conditional generators using **level-sets in φ-space**.
-This repo currently ships **Phase 0–1**: Torch-only φ-transforms (Standardize → PCA) and a pluggable `PhiImage`.
+**URC** adds a **training-time, region-aware regularizer** to conditional generative models.  
+It projects data to a feature space φ, fits a **conditional density** \(p(y \mid e)\) with a Mixture of Diagonal Gaussians (MDN), maintains **streaming per-class thresholds** \(\tau_\alpha\) (for coverage \(1-\alpha\)), and penalizes generated samples whose **scores** exceed \(\tau_\alpha\).  
+This v1 implements the **level-set approach** (deterministic regions via score sublevel sets) and returns a scalar loss to add to your base loss.
 
-## Quickstart (φ only for now)
-```python
-from urc.phi.transforms import StandardScalerTorch, PCATorch
-from urc.phi.image_phi import PhiImage
-import torch as t
+- **Torch-only** φ transforms (StandardScaler, PCA) — no NumPy round-trips at training time.
+- **Conditional MDN** head (stable `log_prob`, variance floors).
+- **Streaming per-class quantiles** (FIFO windows) with warm-up masking.
+- **Level-set losses**: acceptance, separation (optional), and a size proxy.
+- **URCModule** orchestrates everything and returns a single scalar loss **+ diagnostics**.
+- **Save/load** of φ stats, MDN, and quantiles.
 
-Y = t.randn(1024, 128, device='cpu')
-phi = PhiImage(backbone=None, d_out=128, pca_k=64)
-phi.fit_stats(Y)
-Y_proj = phi.project(Y)   # [1024, 64]
-```
+> **Planned (not implemented here):** OT-defined regions and CP-based evaluation.
 
-## Install (dev)
+## Install
+
+URC is uv- and pip-friendly.
+
 ```bash
-uv venv && uv pip install -e .[dev]
-uv run pytest -q
-```
-
-## Roadmap
-- Phase 2: Conditional MDN
-- Phase 3: Streaming quantiles
-- Phase 4: Level-set losses
-- Phase 5: URCModule orchestration
-- Phase 6: I/O & state mgmt
-- Phase 7: Docs & CI
-```
+# From the repo root
+uv sync
+# or plain pip:
+pip install -e .
