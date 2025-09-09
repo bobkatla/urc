@@ -1,18 +1,11 @@
-import pytest
 import numpy as np
-
-try:
-    import torch as t
-    TORCH_OK = True
-except Exception:
-    TORCH_OK = False
-
-pytestmark = pytest.mark.skipif(not TORCH_OK, reason="Torch not available in this environment.")
+import torch as t
 
 from urc.phi.transforms import StandardScalerTorch, PCATorch
 from urc.phi.image_phi import PhiImage
 
 def numpy_pca(X, k):
+    print("SDfsd")
     Xc = X - X.mean(axis=0, keepdims=True)
     U, S, Vt = np.linalg.svd(Xc, full_matrices=False)
     C = Vt.T[:, :k]
