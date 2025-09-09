@@ -27,20 +27,21 @@ def acceptance(
     """
     assert scores_gen.shape == tau.shape, "scores_gen and tau must align"
     violation = scores_gen - (tau - margin)
-    valid = _mask_valid(tau)
-    if not valid.any():
-        return torch.zeros((), dtype=scores_gen.dtype, device=scores_gen.device)
-
-    v = violation[valid]
-    if mode == "softplus":
-        # Smooth penalty; average over valid entries
-        return torch.nn.functional.softplus(v).mean()
-    elif mode == "hinge":
-        # Average over actually violating entries only
-        vv = torch.relu(v)
-        return vv[vv > 0].mean() if (vv > 0).any() else torch.zeros((), dtype=scores_gen.dtype, device=scores_gen.device)
-    else:
-        raise ValueError(f"Unknown mode: {mode}")
+    valid = torch.isfinite(tau)
+    if valid.any():
+        v = violation[valid]
+        if mode == "softplus":
+            return torch.nn.functional.softplus(v).mean()
+        elif mode == "hinge":
+            vv = torch.relu(v)
+            if (vv > 0).any():
+                return vv[vv > 0].mean()
+            # ❗ no violating entries → return graph-connected zero
+            return (v * 0.0).sum()
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+    # ❗ no valid taus (e.g., warmup) → graph-connected zero
+    return (scores_gen * 0.0).sum()
 
 def separation(
     scores_gen_wrong: torch.Tensor,
@@ -65,19 +66,22 @@ def separation(
     """
     assert scores_gen_wrong.shape == tau_wrong.shape, "shapes must align"
     violation = (tau_wrong + margin) - scores_gen_wrong
-    valid = _mask_valid(tau_wrong)
-    if not valid.any():
-        return torch.zeros((), dtype=scores_gen_wrong.dtype, device=scores_gen_wrong.device)
-
-    v = violation[valid]
-    if mode == "softplus":
-        sp = torch.nn.functional.softplus(v)
-        return sp[v > 0].mean() if (v > 0).any() else torch.zeros((), dtype=scores_gen_wrong.dtype, device=scores_gen_wrong.device)
-    elif mode == "hinge":
-        vv = torch.relu(v)
-        return vv[vv > 0].mean() if (vv > 0).any() else torch.zeros((), dtype=scores_gen_wrong.dtype, device=scores_gen_wrong.device)
-    else:
-        raise ValueError(f"Unknown mode: {mode}")
+    valid = torch.isfinite(tau_wrong)
+    if valid.any():
+        v = violation[valid]
+        if mode == "softplus":
+            sp = torch.nn.functional.softplus(v)
+            if (v > 0).any():
+                return sp[v > 0].mean()
+            return (v * 0.0).sum()     # ❗ graph-connected zero
+        elif mode == "hinge":
+            vv = torch.relu(v)
+            if (vv > 0).any():
+                return vv[vv > 0].mean()
+            return (v * 0.0).sum()     # ❗ graph-connected zero
+        else:
+            raise ValueError(f"Unknown mode: {mode}")
+    return (scores_gen_wrong * 0.0).sum()  # ❗ graph-connected zero
 
 def size_proxy(Y_in: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
     """
