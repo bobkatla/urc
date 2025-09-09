@@ -9,7 +9,6 @@ authors = [{name="Bob La", email="duc.la@monash.edu"}]
 dependencies = [
     "torch>=2.3",
     "torchvision",
-    "torchaudio",
     "numpy>=1.23",
     "pydantic>=2.6",
     "typing-extensions>=4.8",
